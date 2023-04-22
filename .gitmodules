@@ -1,0 +1,3 @@
+[submodule "acim_workbook"]
+	path = acim_workbook
+	url = git@github.com:newearthmartin/acim_workbook.git
