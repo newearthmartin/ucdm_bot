@@ -1,3 +1,6 @@
 [submodule "acim_workbook"]
 	path = acim_workbook
 	url = git@github.com:newearthmartin/acim_workbook.git
+[submodule "marto_python"]
+	path = marto_python
+	url = git@github.com:newearthmartin/marto_python.git
