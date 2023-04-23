@@ -1,4 +1,5 @@
 import json
+from datetime import date
 
 workbook_structure = None
 workbook_cache = {}
@@ -7,7 +8,7 @@ WORKBOOK_PATH = 'acim_workbook/es'
 
 def get_day_texts(day: int) -> list[str]:
     """
-    @param day: zero based lesson number
+    :param day: 0-based lesson day
     """
     if day in workbook_cache:
         return workbook_cache[day]
@@ -25,3 +26,10 @@ def get_day_texts(day: int) -> list[str]:
     workbook_cache[day] = rv
     return rv
 
+
+def get_day_lesson_number(today: date) -> int:
+    jan1 = date(today.year, 1, 1)
+    lesson_number = (today - jan1).days
+    if lesson_number >= 365:  # for years with 366 days
+        return None
+    return lesson_number
