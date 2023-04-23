@@ -1,9 +1,11 @@
+import os
 import json
 from datetime import date
+from db import BASE_DIR
 
 workbook_structure = None
 workbook_cache = {}
-WORKBOOK_PATH = 'acim_workbook/es'
+WORKBOOK_PATH = os.path.join(BASE_DIR, 'acim_workbook/es')
 
 
 def get_day_texts(day: int) -> list[str]:
