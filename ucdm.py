@@ -1,20 +1,23 @@
 #!/usr/bin/env python
+import os
 import asyncio
+
+import telegram.error
 from telegram import Bot
 from marto_python.secrets import read_secrets, get_secret
-from bot import send_day
+from db import BASE_DIR
+from bot import try_send_today
 
-from db import get_data, write_data
 
 async def main():
-    # read_secrets('.')
-    # bot = Bot(token=get_secret('TELEGRAM_TOKEN'))
-    # group_id = get_secret('GROUP_ID')
-    # async with bot:
-    #     await send_day(bot, group_id, 0)
-    data = get_data()
-    data.clear()
-    write_data()
+    read_secrets(base_dir=BASE_DIR)
+    bot = Bot(token=get_secret('TELEGRAM_TOKEN'))
+    group_id = get_secret('GROUP_ID')
+    try:
+        async with bot:
+            await try_send_today(bot, group_id)
+    except telegram.error.NetworkError as e:
+        print('Network error - ', e)
 
 if __name__ == '__main__':
     asyncio.run(main())
