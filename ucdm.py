@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-import os
+#!/usr/bin/env -S PYENV_VERSION=ucdm python
 import asyncio
 
 import telegram.error
