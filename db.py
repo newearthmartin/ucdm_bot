@@ -1,16 +1,38 @@
+import os
 import json
+from pathlib import Path
 
+BASE_DIR = Path(__file__).parent.absolute()
+DB_FILE = os.path.join(BASE_DIR, 'db.json')
 data = None
 
-DB_FILE = 'db.json'
+
+def db_set(key, val):
+    data = __get_data()
+    if val is None:
+        if key in data: del data[key]
+    else:
+        data[key] = val
+    __write_data()
 
 
-def write_data():
+def db_get(key, default_value=None):
+    global data
+    data = __get_data()
+    if key in data:
+        return data[key]
+    if default_value is not None:
+        data[key] = default_value
+        return data[key]
+    return None
+
+
+def __write_data():
     with open(DB_FILE, 'w') as f:
         f.write(json.dumps(data, indent=2))
 
 
-def get_data():
+def __get_data():
     global data
     if data is None:
         try:
