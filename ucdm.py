@@ -11,7 +11,6 @@ from bot import try_send_all, get_updates
 async def main():
     read_secrets(base_dir=BASE_DIR)
     bot = Bot(token=get_secret('TELEGRAM_TOKEN'))
-    group_id = get_secret('GROUP_ID')
     try:
         async with bot:
             await get_updates(bot)
