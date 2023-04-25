@@ -5,7 +5,7 @@ import telegram.error
 from telegram import Bot
 from marto_python.secrets import read_secrets, get_secret
 from db import BASE_DIR
-from bot import try_send_today
+from bot import try_send_all, get_updates
 
 
 async def main():
@@ -14,7 +14,8 @@ async def main():
     group_id = get_secret('GROUP_ID')
     try:
         async with bot:
-            await try_send_today(bot, group_id)
+            await get_updates(bot)
+            await try_send_all(bot)
     except telegram.error.NetworkError as e:
         print('Network error - ', e)
 
