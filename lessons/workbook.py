@@ -1,11 +1,11 @@
 import os
 import json
 from datetime import date
-from lessons.db import BASE_DIR
+from django.conf import settings
 
 workbook_structure = None
 workbook_cache = {}
-WORKBOOK_PATH = os.path.join(BASE_DIR, 'acim_workbook/es')
+WORKBOOK_PATH = os.path.join(settings.BASE_DIR, 'acim_workbook/es')
 
 
 def get_day_texts(day: int) -> list[str]:
