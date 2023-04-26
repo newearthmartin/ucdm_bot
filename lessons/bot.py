@@ -1,15 +1,16 @@
+import logging
 from telegram.constants import ChatType, ChatMemberStatus, ParseMode
 from datetime import datetime
 from .workbook import get_day_texts, get_day_lesson_number
-from .db import db_get, db_set
+from .models import Chat
+
+logger = logging.getLogger(__name__)
 
 
 async def get_updates(bot):
     updates = await bot.get_updates()
-    groups_added = set()
-    groups_removed = set()
-    private_chats_added = set()
-    private_chats_removed = set()
+    chats_added = {}
+    chats_removed = set()
 
     for update in updates:
         message = update.message
@@ -18,118 +19,119 @@ async def get_updates(bot):
         if new_chat_member and new_chat_member.user.id == bot.id:
             chat = my_chat_member and my_chat_member.chat
             if new_chat_member.status == ChatMemberStatus.MEMBER:
-                if chat.type == ChatType.GROUP:
-                    groups_added.add(chat.id)
-                    groups_removed.discard(chat.id)
+                chats_added[chat.id] = True
+                chats_removed.discard(chat.id)
             elif new_chat_member.status == ChatMemberStatus.LEFT:
-                if chat.type == ChatType.GROUP:
-                    groups_removed.add(chat.id)
-                    groups_added.discard(chat.id)
+                chats_added.pop(chat.id, None)
+                chats_removed.add(chat.id)
         if message:
             chat = message.chat
             if not chat: continue
             if chat.type == ChatType.PRIVATE:
-                added, removed = private_chats_added, private_chats_removed
+                is_group = False
             elif chat.type == ChatType.GROUP:
-                added, removed = groups_added, groups_removed
+                is_group = True
             else:
+                logging.error(f'unexpected chat type {chat.type}')
                 continue
             if message.text == '/start':
-                added.add(chat.id)
-                removed.discard(chat.id)
+                chats_added[chat.id] = is_group
+                chats_removed.discard(chat.id)
             elif message.text == '/stop':
-                added.discard(chat.id)
-                removed.add(chat.id)
+                chats_added.pop(chat.id, None)
+                chats_removed.add(chat.id)
             else:
-                print(f'unexpected message in {chat.id}: {message.text}')
+                logger.error(f'unexpected message in {chat.id}: {message.text}')
                 continue
-    await update_chats_status(bot, 'groups', groups_added, groups_removed)
-    await update_chats_status(bot, 'private_chats', private_chats_added, private_chats_removed)
+
+    for chat_id, is_group in chats_added.items(): await set_chat_status(bot, chat_id, is_group, True)
+    for chat_id in chats_removed: await set_chat_status(bot, chat_id, None, False)
 
 
-async def update_chats_status(bot, db_key, chats_added, chats_removed):
-    for chat_id in chats_added:
-        modified = chat_status(db_key, chat_id, True)
-        if modified:
-            await bot.send_message(chat_id, "Hola!\n\nA partir de ahora voy a estar mandando las lecciones todos los días.\n\nPara frenar las lecciones manda el mensaje */stop*", parse_mode = ParseMode.MARKDOWN)
-            await try_send_today(bot, chat_id)
-    for chat_id in chats_removed:
-        modified = chat_status(db_key, chat_id, False)
-        if modified:
-            await bot.send_message(chat_id, "Ya no enviaré las lecciones.\n\nPara volver a recibirlas, manda el mensaje */start*", parse_mode = ParseMode.MARKDOWN)
+async def set_chat_status(bot, chat_id, is_group, send_lesson):
+    modified = await __modify_chat_status(chat_id, is_group, send_lesson)
+    if modified:
+        if send_lesson:
+            await bot.send_message(
+                chat_id,
+                "Hola!\n\nA partir de ahora voy a estar mandando las lecciones todos los días.\n\nPara frenar las lecciones manda el mensaje */stop*",
+                parse_mode=ParseMode.MARKDOWN
+            )
+        else:
+            await bot.send_message(
+                chat_id,
+                "Ya no enviaré las lecciones.\n\nPara volver a recibirlas, manda el mensaje */start*",
+                parse_mode = ParseMode.MARKDOWN
+            )
 
 
-
-def chat_status(db_key, chat_id, join_not_left):
+async def __modify_chat_status(chat_id, is_group, send_lesson):
+    chat = await Chat.objects.filter(chat_id=chat_id).afirst()
     modified = False
-    chats = db_get(db_key, [])
-    if join_not_left and chat_id not in chats:
-        chats.append(chat_id)
+    if not chat:
+        if not send_lesson: return False
+        chat = Chat(chat_id=chat_id, is_group=is_group, send_lesson=True)
         modified = True
-    if not join_not_left and chat_id in chats:
-        chats.remove(chat_id)
+    elif chat.send_lesson != send_lesson:
+        chat.send_lesson = send_lesson
         modified = True
     if modified:
-        db_set(db_key, chats)
-        action = 'JOINED' if join_not_left else 'LEFT'
-        print(f'Set {db_key} status {chat_id} - {action}')
+        await chat.asave()
     return modified
 
 
 async def try_send_all(bot):
-    chats = db_get('groups', []) + db_get('private_chats', [])
-    if not chats:
-        print('No chats')
-        return
-    print(f'Sending to {len(chats)} chats')
-    for chat_id in chats:
-        await try_send_today(bot, chat_id)
+    chats = Chat.objects.filter(send_lesson=True)
+    chat_count = await chats.acount()
+    logger.info(f'Sending to {chat_count} chats')
+    async for chat in Chat.objects.filter(send_lesson=True).all():
+        await try_send_today(bot, chat)
 
 
 __DATE_FORMAT = '%Y-%m-%d'
 
 
-async def try_send_today(bot, chat_id):
+async def try_send_today(bot, chat):
     now = datetime.now()
     today = now.date()
-    if not can_send_today(today, chat_id):
-        print(f'Already sent today\'s lesson to chat {chat_id}')
+    if not can_send_today(today, chat):
+        logger.info(f'Already sent today\'s lesson to {chat}')
         return
     if now.hour < 8:
-        print(f'Too early to send to chat {chat_id}')
+        logger.info(f'Too early to send to {chat}')
         return
     if now.hour >= 23:
-        print(f'Too late to send to chat {chat_id}')
+        logger.info(f'Too late to send to {chat}')
         return
     lesson_number = get_day_lesson_number(today)
     if lesson_number is None:
-        print(f'No lesson for {today}')
+        logger.warning(f'No lesson for {today}')
         return
-    await send_day(bot, chat_id, lesson_number)
-    db_set(f'{chat_id}.last_sent', today.strftime(__DATE_FORMAT))
+    await send_lesson(bot, chat, today, lesson_number)
 
 
-def can_send_today(today, chat_id):
-    last_sent = db_get(f'{chat_id}.last_sent')
-    if not last_sent:
+def can_send_today(today, chat):
+    if not chat.last_sent:
         return True
-    last_sent = datetime.strptime(last_sent, __DATE_FORMAT).date()
-    return (today - last_sent).days >= 1
+    return (today - chat.last_sent).days >= 1
 
 
-async def send_day(bot, chat_id, day):
-    print(f'Sending day {day} to chat {chat_id}')
-    for text in get_day_texts(day):
-        await send_lesson_text(bot, chat_id, text)
+async def send_lesson(bot, chat, today, lesson_number):
+    logger.info(f'Sending day {lesson_number} to {chat}')
+    for text in get_day_texts(lesson_number):
+        await __send_lesson_text(bot, chat.chat_id, text)
+    chat.last_sent = today
+    chat.last_lesson_sent = lesson_number
+    await chat.asave()
 
 
-async def send_lesson_text(bot, chat_id, text):
+async def __send_lesson_text(bot, chat_id, text):
     messages = split_for_telegram(text)
     if len(messages) > 1:
         part_lengths = [len(message) for message in messages]
-        print(f'Splitting message of length {len(text)} into {len(messages)} parts of lengths {part_lengths}')
+        logger.info(f'Splitting message of length {len(text)} into {len(messages)} parts of lengths {part_lengths}')
     else:
-        print(f'Sending message of length {len(text)}')
+        logger.info(f'Sending message of length {len(text)}')
     for message in messages:
         await bot.send_message(chat_id, message, parse_mode=ParseMode.MARKDOWN)
 

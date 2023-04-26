@@ -4,5 +4,5 @@ __pycache__/
 .python-version
 
 secrets.toml
-db.json
 ucdm.log
+db.sqlite3
