@@ -1,16 +1,14 @@
 #!/usr/bin/env -S PYENV_VERSION=ucdm DJANGO_SETTINGS_MODULE=ucdm_bot.settings python
 import django
 django.setup()
-
-from django.conf import settings
 import asyncio
-import telegram.error
-from telegram import Bot
+import telegram
+from django.conf import settings
 from lessons.bot import try_send_all, get_updates
 
 
 async def main():
-    bot = Bot(token=settings.TELEGRAM_TOKEN)
+    bot = telegram.Bot(token=settings.TELEGRAM_TOKEN)
     try:
         async with bot:
             await get_updates(bot)
