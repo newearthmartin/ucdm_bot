@@ -1,3 +1,4 @@
 wheel
 python-telegram-bot
 toml==0.10.2
+django==4.2

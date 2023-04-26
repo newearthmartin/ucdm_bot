@@ -1,16 +1,16 @@
-#!/usr/bin/env -S PYENV_VERSION=ucdm python
-import asyncio
+#!/usr/bin/env -S PYENV_VERSION=ucdm DJANGO_SETTINGS_MODULE=ucdm_bot.settings python
+import django
+django.setup()
 
+from django.conf import settings
+import asyncio
 import telegram.error
 from telegram import Bot
-from marto_python.secrets import read_secrets, get_secret
-from db import BASE_DIR
-from bot import try_send_all, get_updates
+from lessons.bot import try_send_all, get_updates
 
 
 async def main():
-    read_secrets(base_dir=BASE_DIR)
-    bot = Bot(token=get_secret('TELEGRAM_TOKEN'))
+    bot = Bot(token=settings.TELEGRAM_TOKEN)
     try:
         async with bot:
             await get_updates(bot)

@@ -1,8 +1,10 @@
 import os
 import json
 from pathlib import Path
+from django.conf import settings
 
-BASE_DIR = Path(__file__).parent.absolute()
+BASE_DIR = Path(__file__).parent.parent.absolute()
+print(BASE_DIR, settings.BASE_DIR)
 DB_FILE = os.path.join(BASE_DIR, 'db.json')
 data = None
 

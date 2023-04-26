@@ -1,7 +1,7 @@
-from workbook import get_day_texts, get_day_lesson_number
 from telegram.constants import ChatType, ChatMemberStatus, ParseMode
 from datetime import datetime
-from db import db_get, db_set
+from .workbook import get_day_texts, get_day_lesson_number
+from .db import db_get, db_set
 
 
 async def get_updates(bot):

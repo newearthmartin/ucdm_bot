@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import date
-from db import BASE_DIR
+from lessons.db import BASE_DIR
 
 workbook_structure = None
 workbook_cache = {}
