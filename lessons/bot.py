@@ -1,14 +1,48 @@
+import json
 import logging
+import telegram
+from django.conf import settings
+from django.http import HttpResponse, HttpResponseForbidden
+from django.urls import reverse
+from telegram.ext import Updater, MessageHandler
 from telegram.constants import ChatType, ChatMemberStatus, ParseMode
 from datetime import datetime
 from .workbook import get_day_texts, get_day_lesson_number
 from .models import Chat
+from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
 
+bot = None
 
-async def get_updates(bot):
-    updates = await bot.get_updates()
+
+async def initialize_bot(with_webhooks):
+    global bot
+    if not bot:
+        bot = telegram.Bot(token=settings.TELEGRAM_TOKEN)
+        if with_webhooks:
+            logger.info('Initializing bot with webhooks')
+            webhooks_url = 'https://localhost.multilanguage.xyz' + reverse(webhooks_view)
+            await bot.set_webhook(webhooks_url, secret_token=settings.TELEGRAM_SECRET_TOKEN)
+        else:
+            logger.info('Initializing bot without webhooks')
+            await bot.delete_webhook()
+    return bot
+
+
+@csrf_exempt
+def webhooks_view(request):  # TODO: hacer async view?
+    secret_token = request.headers.get('X-Telegram-Bot-Api-Secret-Token', None)
+    if secret_token != settings.TELEGRAM_SECRET_TOKEN: return HttpResponseForbidden()
+
+    logger.info('received webhooks')
+    data = request.body.decode('utf-8')
+    data = json.loads(data)
+    logger.info(data)
+    return HttpResponse()
+
+
+async def process_updates(bot, updates):
     chats_added = {}
     chats_removed = set()
 

@@ -9,8 +9,9 @@ read_secrets(base_dir=BASE_DIR)
 DEBUG = True
 SECRET_KEY = 'django-insecure-0vt$7j1xhe7vob4i4_j&wmufbitctj&fdalr5l6y+*bslo00!^'
 TELEGRAM_TOKEN = get_secret('TELEGRAM_TOKEN')
+TELEGRAM_SECRET_TOKEN = get_secret('TELEGRAM_SECRET_TOKEN')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
