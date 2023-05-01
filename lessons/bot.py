@@ -1,16 +1,12 @@
-import json
 import logging
-import telegram
 from django.conf import settings
-from django.http import HttpResponse, HttpResponseForbidden
 from django.urls import reverse
-from telegram import Update
+from telegram import Bot, Update, BotCommand
 from telegram.constants import ChatType, ChatMemberStatus, ParseMode
 from datetime import datetime
 from .workbook import get_day_texts, get_day_lesson_number
 from .models import Chat
-from django.views.decorators.csrf import csrf_exempt
-from asgiref.sync import async_to_sync
+from . import views
 
 logger = logging.getLogger(__name__)
 
@@ -20,28 +16,24 @@ bot = None
 async def initialize_bot(with_webhooks):
     global bot
     if not bot:
-        bot = telegram.Bot(token=settings.TELEGRAM_TOKEN)
+        bot = Bot(token=settings.TELEGRAM_TOKEN)
         if with_webhooks:
             logger.info('Initializing bot with webhooks')
-            webhooks_url = settings.TELEGRAM_WEBHOOKS_SERVER + reverse(webhooks_view)
+            webhooks_url = settings.TELEGRAM_WEBHOOKS_SERVER + reverse(views.webhooks_view)
             await bot.set_webhook(webhooks_url, secret_token=settings.TELEGRAM_SECRET_TOKEN)
         else:
             logger.info('Initializing bot without webhooks')
             await bot.delete_webhook()
+        await set_commands(bot)
     return bot
 
 
-@csrf_exempt
-def webhooks_view(request):  # TODO: hacer async view?
-    secret_token = request.headers.get('X-Telegram-Bot-Api-Secret-Token', None)
-    if secret_token != settings.TELEGRAM_SECRET_TOKEN: return HttpResponseForbidden()
-
-    logger.info('received webhooks')
-    data = request.body.decode('utf-8')
-    data = json.loads(data)
-    update = Update.de_json(data, bot)
-    async_to_sync(process_update)(update)
-    return HttpResponse()
+async def set_commands(bot):
+    commands = [
+        BotCommand('start', 'Comenzar a recibir las lecciones'),
+        BotCommand('stop', 'Dejar de recibir las lecciones'),
+    ]
+    await bot.set_my_commands(commands)
 
 
 async def process_update(update):

@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from lessons.bot import webhooks_view
+from lessons.views import webhooks_view
 
 
 urlpatterns = [
