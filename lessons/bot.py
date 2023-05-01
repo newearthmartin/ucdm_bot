@@ -4,12 +4,13 @@ import telegram
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseForbidden
 from django.urls import reverse
-from telegram.ext import Updater, MessageHandler
+from telegram import Update
 from telegram.constants import ChatType, ChatMemberStatus, ParseMode
 from datetime import datetime
 from .workbook import get_day_texts, get_day_lesson_number
 from .models import Chat
 from django.views.decorators.csrf import csrf_exempt
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ async def initialize_bot(with_webhooks):
         bot = telegram.Bot(token=settings.TELEGRAM_TOKEN)
         if with_webhooks:
             logger.info('Initializing bot with webhooks')
-            webhooks_url = 'https://localhost.multilanguage.xyz' + reverse(webhooks_view)
+            webhooks_url = settings.TELEGRAM_WEBHOOKS_SERVER + reverse(webhooks_view)
             await bot.set_webhook(webhooks_url, secret_token=settings.TELEGRAM_SECRET_TOKEN)
         else:
             logger.info('Initializing bot without webhooks')
@@ -38,65 +39,59 @@ def webhooks_view(request):  # TODO: hacer async view?
     logger.info('received webhooks')
     data = request.body.decode('utf-8')
     data = json.loads(data)
-    logger.info(data)
+    update = Update.de_json(data, bot)
+    async_to_sync(process_update)(update)
     return HttpResponse()
 
 
-async def process_updates(bot, updates):
-    chats_added = {}
-    chats_removed = set()
-
-    for update in updates:
-        message = update.message
-        my_chat_member = update.my_chat_member
-        new_chat_member = my_chat_member and my_chat_member.new_chat_member
-        if new_chat_member and new_chat_member.user.id == bot.id:
-            chat = my_chat_member and my_chat_member.chat
-            if new_chat_member.status == ChatMemberStatus.MEMBER:
-                chats_added[chat.id] = True
-                chats_removed.discard(chat.id)
-            elif new_chat_member.status == ChatMemberStatus.LEFT:
-                chats_added.pop(chat.id, None)
-                chats_removed.add(chat.id)
-        if message:
-            chat = message.chat
-            if not chat: continue
-            if chat.type == ChatType.PRIVATE:
-                is_group = False
-            elif chat.type == ChatType.GROUP:
-                is_group = True
-            else:
-                logging.error(f'unexpected chat type {chat.type}')
-                continue
-            if message.text == '/start':
-                chats_added[chat.id] = is_group
-                chats_removed.discard(chat.id)
-            elif message.text == '/stop':
-                chats_added.pop(chat.id, None)
-                chats_removed.add(chat.id)
-            else:
-                logger.error(f'unexpected message in {chat.id}: {message.text}')
-                continue
-
-    for chat_id, is_group in chats_added.items(): await set_chat_status(bot, chat_id, is_group, True)
-    for chat_id in chats_removed: await set_chat_status(bot, chat_id, None, False)
+async def process_update(update):
+    if update.my_chat_member:
+        await process_chat_member(update, None)
+    elif update.message:
+        await process_message(update)
 
 
-async def set_chat_status(bot, chat_id, is_group, send_lesson):
+async def process_chat_member(update, context):
+    logger.info('Processing chat member update')
+    my_chat_member = update.my_chat_member
+    new_chat_member = my_chat_member and update.my_chat_member.new_chat_member
+    chat = my_chat_member and my_chat_member.chat
+    if new_chat_member and new_chat_member.user.id == bot.id:
+        if new_chat_member.status == ChatMemberStatus.MEMBER:
+            await set_chat_status(bot, chat.id, True, is_group=True, send_msg=True)
+        elif new_chat_member.status == ChatMemberStatus.LEFT:
+            await set_chat_status(bot, chat.id, False, send_msg=False)
+
+
+async def process_message(update):
+    message = update.message
+    chat = message.chat
+    if not chat:
+        logger.error(f'Chat expected: {update}')
+        return
+    if chat.type == ChatType.PRIVATE:
+        is_group = False
+    elif chat.type == ChatType.GROUP:
+        is_group = True
+    else:
+        logging.error(f'Unexpected chat type {chat.type}')
+        return
+    if message.text == '/start':
+        await set_chat_status(bot, chat.id, True, is_group=is_group, send_msg=True)
+    elif message.text == '/stop':
+        await set_chat_status(bot, chat.id, False, send_msg=True)
+    else:
+        logger.error(f'Unexpected message in {chat.id}: {message.text}')
+
+
+async def set_chat_status(bot, chat_id, send_lesson, is_group=False, send_msg=True):
     modified = await __modify_chat_status(chat_id, is_group, send_lesson)
-    if modified:
+    if modified and send_msg:
         if send_lesson:
-            await bot.send_message(
-                chat_id,
-                "Hola!\n\nA partir de ahora voy a estar mandando las lecciones todos los días.\n\nPara frenar las lecciones manda el mensaje */stop*",
-                parse_mode=ParseMode.MARKDOWN
-            )
+            msg = "Hola!\n\nA partir de ahora voy a estar mandando las lecciones todos los días.\n\nPara frenar las lecciones manda el mensaje */stop*"
         else:
-            await bot.send_message(
-                chat_id,
-                "Ya no enviaré las lecciones.\n\nPara volver a recibirlas, manda el mensaje */start*",
-                parse_mode = ParseMode.MARKDOWN
-            )
+            msg = "Ya no enviaré las lecciones.\n\nPara volver a recibirlas, manda el mensaje */start*"
+        await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
 async def __modify_chat_status(chat_id, is_group, send_lesson):
@@ -110,6 +105,8 @@ async def __modify_chat_status(chat_id, is_group, send_lesson):
         chat.send_lesson = send_lesson
         modified = True
     if modified:
+        action = 'send' if send_lesson else 'NOT send'
+        logger.info(f'Setting {chat} to {action} lessons')
         await chat.asave()
     return modified
 
