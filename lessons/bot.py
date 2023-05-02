@@ -1,25 +1,31 @@
 import logging
 from django.conf import settings
-from telegram import Bot, BotCommand, Update
-from telegram.constants import ChatType, ChatMemberStatus, ParseMode
+from telegram import BotCommand
+from telegram.constants import ParseMode
+from telegram.ext import Application
 from datetime import datetime
 from .workbook import get_day_texts, get_day_lesson_number
 from .models import Chat
+from . import bot_updates
 
 logger = logging.getLogger(__name__)
 
 bot = None
+application = None
 
 
 async def initialize_bot():
     global bot
+    global application
     if not bot:
         logger.info('Initializing bot')
-        bot = Bot(token=settings.TELEGRAM_TOKEN)
-        await bot.initialize()
+        application = Application.builder().token(settings.TELEGRAM_TOKEN).build()
+        bot_updates.configure_handlers(application)
+        await application.initialize()
+        bot = application.bot
         logger.info(f'Bot: {bot.username}')
         await set_commands()
-    return bot
+    return application
 
 
 async def set_commands():
