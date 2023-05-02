@@ -24,8 +24,14 @@ async def initialize_bot(with_webhooks):
         else:
             logger.info('Initializing bot without webhooks')
             await bot.delete_webhook()
+        await show_bot_info(bot)
         await set_commands(bot)
     return bot
+
+
+async def show_bot_info(bot):
+    info = await bot.get_me()
+    logger.info(f'I am bot {info.username}')
 
 
 async def set_commands(bot):
