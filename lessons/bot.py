@@ -31,6 +31,7 @@ async def initialize_bot(with_webhooks):
 async def set_commands(bot):
     commands = [
         BotCommand('start', 'Comenzar a recibir las lecciones'),
+        BotCommand('modo', 'Configurar el modo de las lecciones (calendario o propia)'),
         BotCommand('stop', 'Dejar de recibir las lecciones'),
     ]
     await bot.set_my_commands(commands)
