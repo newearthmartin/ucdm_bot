@@ -1,7 +1,7 @@
 import logging
 from enum import Enum
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
-from telegram.constants import ChatType, ChatMemberStatus, ParseMode
+from telegram.constants import ChatMemberStatus, ParseMode
 from telegram.ext import Application, CommandHandler, ContextTypes, ConversationHandler, ChatMemberHandler, \
     MessageHandler, filters
 from . import bot as bot_module
