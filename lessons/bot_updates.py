@@ -54,8 +54,7 @@ async def lesson_mode_state(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                                        input_field_placeholder='¿Tipo de lección?')
     await update.message.reply_text(
         '¿Quieres la lección del día según el calendario o ir en tu propia lección?\n\n'
-        'Envía /cancel para abandonar esta opción.\n'
-        'Envía /stop para dejar de recibir las lecciones.\n',
+        'Envía /cancel para abandonar esta opción.\n',
         parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
     return State.LESSON_TYPES
 
