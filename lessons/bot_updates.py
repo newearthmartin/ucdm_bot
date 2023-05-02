@@ -75,7 +75,7 @@ async def lesson_types_state(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return ConversationHandler.END
     elif lesson_type == LessonType.OWN:
         await update.message.reply_text(
-            'Ingresa el número de lección que quieres recibir hoy:\n(1 para la primera lección)',
+            'Ingresa el número de lección (1 - 365) que quieres recibir hoy:\n',
             reply_markup=ReplyKeyboardRemove())
         return State.LESSON_NUMBER
 
