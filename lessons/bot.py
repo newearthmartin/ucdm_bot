@@ -1,6 +1,6 @@
 import logging
 from django.conf import settings
-from telegram import Bot, BotCommand
+from telegram import Bot, BotCommand, Update
 from telegram.constants import ChatType, ChatMemberStatus, ParseMode
 from datetime import datetime
 from .workbook import get_day_texts, get_day_lesson_number
@@ -30,46 +30,6 @@ async def set_commands():
         BotCommand('stop', 'Dejar de recibir las lecciones'),
     ]
     await bot.set_my_commands(commands)
-
-
-async def process_update(update):
-    if update.my_chat_member:
-        await process_chat_member(update, None)
-    elif update.message:
-        await process_message(update)
-
-
-async def process_chat_member(update, context):
-    logger.info('Processing chat member update')
-    my_chat_member = update.my_chat_member
-    new_chat_member = my_chat_member and update.my_chat_member.new_chat_member
-    chat = my_chat_member and my_chat_member.chat
-    if new_chat_member and new_chat_member.user.id == bot.id:
-        if new_chat_member.status == ChatMemberStatus.MEMBER:
-            await set_chat_status(chat.id, True, is_group=True, send_msg=True)
-        elif new_chat_member.status == ChatMemberStatus.LEFT:
-            await set_chat_status(chat.id, False, send_msg=False)
-
-
-async def process_message(update):
-    message = update.message
-    chat = message.chat
-    if not chat:
-        logger.error(f'Chat expected: {update}')
-        return
-    if chat.type == ChatType.PRIVATE:
-        is_group = False
-    elif chat.type == ChatType.GROUP:
-        is_group = True
-    else:
-        logging.error(f'Unexpected chat type {chat.type}')
-        return
-    if message.text == '/start':
-        await set_chat_status(chat.id, True, is_group=is_group, send_msg=True)
-    elif message.text == '/stop':
-        await set_chat_status(chat.id, False, send_msg=True)
-    else:
-        logger.error(f'Unexpected message in {chat.id}: {message.text}')
 
 
 async def set_chat_status(chat_id, send_lesson, is_group=False, send_msg=True):
@@ -106,9 +66,6 @@ async def try_send_all():
     logger.info(f'Sending to {chat_count} chats')
     async for chat in Chat.objects.filter(send_lesson=True).all():
         await try_send_today(chat)
-
-
-__DATE_FORMAT = '%Y-%m-%d'
 
 
 async def try_send_today(chat):

@@ -6,7 +6,8 @@ import logging
 import asyncio
 from telegram.ext import Updater
 from telegram.error import NetworkError
-from lessons.bot import initialize_bot, try_send_all, process_update
+from lessons.bot import initialize_bot, try_send_all
+from lessons.bot_updates import process_update
 logger = logging.getLogger(__name__)
 
 

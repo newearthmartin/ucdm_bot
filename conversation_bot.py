@@ -19,7 +19,7 @@ from telegram.ext import (
     filters,
 )
 from lessons import bot as bot_module
-from lessons.bot import process_chat_member
+from lessons.bot_updates import process_chat_member
 
 logger = logging.getLogger(__name__)
 
