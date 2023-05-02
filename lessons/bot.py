@@ -49,6 +49,21 @@ async def set_chat_status(chat_id, send_lesson, is_group=False, send_msg=True):
         await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
+async def set_lesson_mode(chat_id, is_calendar, lesson_number=None):
+    assert is_calendar or lesson_number is not None
+    chat = await Chat.objects.filter(chat_id=chat_id).afirst()
+    if is_calendar:
+        if chat.is_calendar: return
+        chat.is_calendar = True
+        chat.last_lesson_sent = None
+    else:
+        chat.is_calendar = False
+        chat.last_lesson_sent = lesson_number - 1
+    chat.last_sent = None
+    await chat.asave()
+    await do_send_today(chat)
+
+
 async def __modify_chat_status(chat_id, is_group, send_lesson):
     chat = await Chat.objects.filter(chat_id=chat_id).afirst()
     modified = False
@@ -86,11 +101,18 @@ async def try_send_today(chat):
     if now.hour >= 23:
         logger.info(f'Too late to send to {chat}')
         return
-    lesson_number = get_day_lesson_number(today)
-    if lesson_number is None:
-        logger.warning(f'No lesson for {today}')
-        return
-    await send_lesson(chat, today, lesson_number)
+    await do_send_today(chat)
+
+
+async def do_send_today(chat):
+    if chat.is_calendar:
+        lesson_number = get_day_lesson_number(datetime.now().date())
+    else:
+        lesson_number = chat.last_lesson_sent if chat.last_lesson_sent else -1
+        lesson_number += 1
+        if lesson_number < 0 or lesson_number > 364:
+            lesson_number = 0
+    await send_lesson(chat, lesson_number)
 
 
 def can_send_today(today, chat):
@@ -99,11 +121,11 @@ def can_send_today(today, chat):
     return (today - chat.last_sent).days >= 1
 
 
-async def send_lesson(chat, today, lesson_number):
-    logger.info(f'Sending day {lesson_number} to {chat}')
+async def send_lesson(chat, lesson_number):
+    logger.info(f'Sending lesson {lesson_number + 1} to {chat}')
     for text in get_day_texts(lesson_number):
         await __send_lesson_text(chat.chat_id, text)
-    chat.last_sent = today
+    chat.last_sent = datetime.now().date()
     chat.last_lesson_sent = lesson_number
     await chat.asave()
 

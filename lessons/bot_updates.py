@@ -67,6 +67,7 @@ async def lesson_types_state(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(
             'Recibirás la lección del día según el calendario.',
             reply_markup=ReplyKeyboardRemove())
+        await bot_module.set_lesson_mode(get_chat_id(update), True)
         return ConversationHandler.END
     elif lesson_type == LessonType.OWN:
         await update.message.reply_text(
@@ -87,6 +88,7 @@ async def lesson_number_state(update: Update, context: ContextTypes.DEFAULT_TYPE
     logger.info(f'Lesson number selected {number}')
     await update.message.reply_text(
         f'Recibirás las lecciones empezando hoy por la número {number}.', reply_markup=ReplyKeyboardRemove())
+    await bot_module.set_lesson_mode(get_chat_id(update), False, lesson_number=number - 1)
     return ConversationHandler.END
 
 
