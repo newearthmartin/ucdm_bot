@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from django.conf import settings
 from telegram import BotCommand
@@ -61,7 +62,11 @@ async def set_lesson_mode(chat_id, is_calendar, lesson_number=None):
         chat.last_lesson_sent = lesson_number - 1
     chat.last_sent = None
     await chat.asave()
-    await do_send_today(chat)
+
+    async def task():
+        await asyncio.sleep(3)
+        await do_send_today(chat)
+    asyncio.create_task(task())
 
 
 async def __modify_chat_status(chat_id, is_group, send_lesson):
