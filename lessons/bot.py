@@ -24,17 +24,17 @@ async def initialize_bot(with_webhooks):
         else:
             logger.info('Initializing bot without webhooks')
             await bot.delete_webhook()
-        await show_bot_info(bot)
-        await set_commands(bot)
+        await show_bot_info()
+        await set_commands()
     return bot
 
 
-async def show_bot_info(bot):
+async def show_bot_info():
     info = await bot.get_me()
     logger.info(f'I am bot {info.username}')
 
 
-async def set_commands(bot):
+async def set_commands():
     logger.info('Setting bot commands')
     commands = [
         BotCommand('start', 'Comenzar a recibir las lecciones'),
@@ -58,9 +58,9 @@ async def process_chat_member(update, context):
     chat = my_chat_member and my_chat_member.chat
     if new_chat_member and new_chat_member.user.id == bot.id:
         if new_chat_member.status == ChatMemberStatus.MEMBER:
-            await set_chat_status(bot, chat.id, True, is_group=True, send_msg=True)
+            await set_chat_status(chat.id, True, is_group=True, send_msg=True)
         elif new_chat_member.status == ChatMemberStatus.LEFT:
-            await set_chat_status(bot, chat.id, False, send_msg=False)
+            await set_chat_status(chat.id, False, send_msg=False)
 
 
 async def process_message(update):
@@ -77,14 +77,14 @@ async def process_message(update):
         logging.error(f'Unexpected chat type {chat.type}')
         return
     if message.text == '/start':
-        await set_chat_status(bot, chat.id, True, is_group=is_group, send_msg=True)
+        await set_chat_status(chat.id, True, is_group=is_group, send_msg=True)
     elif message.text == '/stop':
-        await set_chat_status(bot, chat.id, False, send_msg=True)
+        await set_chat_status(chat.id, False, send_msg=True)
     else:
         logger.error(f'Unexpected message in {chat.id}: {message.text}')
 
 
-async def set_chat_status(bot, chat_id, send_lesson, is_group=False, send_msg=True):
+async def set_chat_status(chat_id, send_lesson, is_group=False, send_msg=True):
     modified = await __modify_chat_status(chat_id, is_group, send_lesson)
     if modified and send_msg:
         if send_lesson:
@@ -111,18 +111,18 @@ async def __modify_chat_status(chat_id, is_group, send_lesson):
     return modified
 
 
-async def try_send_all(bot):
+async def try_send_all():
     chats = Chat.objects.filter(send_lesson=True)
     chat_count = await chats.acount()
     logger.info(f'Sending to {chat_count} chats')
     async for chat in Chat.objects.filter(send_lesson=True).all():
-        await try_send_today(bot, chat)
+        await try_send_today(chat)
 
 
 __DATE_FORMAT = '%Y-%m-%d'
 
 
-async def try_send_today(bot, chat):
+async def try_send_today(chat):
     now = datetime.now()
     today = now.date()
     if not can_send_today(today, chat):
@@ -138,7 +138,7 @@ async def try_send_today(bot, chat):
     if lesson_number is None:
         logger.warning(f'No lesson for {today}')
         return
-    await send_lesson(bot, chat, today, lesson_number)
+    await send_lesson(chat, today, lesson_number)
 
 
 def can_send_today(today, chat):
@@ -147,16 +147,16 @@ def can_send_today(today, chat):
     return (today - chat.last_sent).days >= 1
 
 
-async def send_lesson(bot, chat, today, lesson_number):
+async def send_lesson(chat, today, lesson_number):
     logger.info(f'Sending day {lesson_number} to {chat}')
     for text in get_day_texts(lesson_number):
-        await __send_lesson_text(bot, chat.chat_id, text)
+        await __send_lesson_text(chat.chat_id, text)
     chat.last_sent = today
     chat.last_lesson_sent = lesson_number
     await chat.asave()
 
 
-async def __send_lesson_text(bot, chat_id, text):
+async def __send_lesson_text(chat_id, text):
     messages = split_for_telegram(text)
     if len(messages) > 1:
         part_lengths = [len(message) for message in messages]
