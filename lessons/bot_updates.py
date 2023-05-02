@@ -103,7 +103,7 @@ def get_chat_id(update: Update) -> int:
     if update.message and update.message.chat:
         return update.message.chat_id
     elif update.my_chat_member and update.my_chat_member.chat:
-        return update.my_chat_member.chat
+        return update.my_chat_member.chat.id
     else:
         return None
 
