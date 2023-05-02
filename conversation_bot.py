@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env -S PYENV_VERSION=ucdm DJANGO_SETTINGS_MODULE=ucdm_bot.settings python
 # pylint: disable=unused-argument, wrong-import-position
 
 from enum import Enum
