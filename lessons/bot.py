@@ -1,7 +1,7 @@
 import logging
 from django.conf import settings
 from django.urls import reverse
-from telegram import Bot, Update, BotCommand
+from telegram import Bot, BotCommand
 from telegram.constants import ChatType, ChatMemberStatus, ParseMode
 from datetime import datetime
 from .workbook import get_day_texts, get_day_lesson_number
@@ -24,14 +24,10 @@ async def initialize_bot(with_webhooks):
         else:
             logger.info('Initializing bot without webhooks')
             await bot.delete_webhook()
-        await show_bot_info()
+        await bot.initialize()
+        logger.info(f'Bot: {bot.username}')
         await set_commands()
     return bot
-
-
-async def show_bot_info():
-    info = await bot.get_me()
-    logger.info(f'I am bot {info.username}')
 
 
 async def set_commands():
@@ -88,9 +84,10 @@ async def set_chat_status(chat_id, send_lesson, is_group=False, send_msg=True):
     modified = await __modify_chat_status(chat_id, is_group, send_lesson)
     if modified and send_msg:
         if send_lesson:
-            msg = "Hola!\n\nA partir de ahora voy a estar mandando las lecciones todos los días.\n\nPara frenar las lecciones manda el mensaje */stop*"
+            msg = 'Hola!\n\nA partir de ahora voy a estar mandando las lecciones todos los días.\n\n' \
+                  'Para frenar las lecciones manda el mensaje */stop*'
         else:
-            msg = "Ya no enviaré las lecciones.\n\nPara volver a recibirlas, manda el mensaje */start*"
+            msg = 'Ya no enviaré las lecciones.\n\nPara volver a recibirlas, manda el mensaje */start*'
         await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
