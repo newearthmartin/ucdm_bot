@@ -1,10 +1,11 @@
 #!/usr/bin/env -S PYENV_VERSION=ucdm DJANGO_SETTINGS_MODULE=ucdm_bot.settings python
 import django
 django.setup()
+
 import logging
 import asyncio
 from telegram.ext import Updater
-import telegram.error
+from telegram.error import NetworkError
 from lessons.bot import initialize_bot, try_send_all, process_update
 logger = logging.getLogger(__name__)
 
@@ -12,11 +13,11 @@ logger = logging.getLogger(__name__)
 async def main():
     while True:
         try:
-            bot = await initialize_bot(False)
+            bot = await initialize_bot()
             await asyncio.gather(process_updates_loop(bot), send_all_loop(bot))
         except asyncio.exceptions.CancelledError:
             return
-        except telegram.error.NetworkError as e:
+        except NetworkError as e:
             logger.info('Exiting')
             logger.warning(f'Network error: {e}')
         except:

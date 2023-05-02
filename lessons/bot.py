@@ -1,29 +1,21 @@
 import logging
 from django.conf import settings
-from django.urls import reverse
 from telegram import Bot, BotCommand
 from telegram.constants import ChatType, ChatMemberStatus, ParseMode
 from datetime import datetime
 from .workbook import get_day_texts, get_day_lesson_number
 from .models import Chat
-from . import views
 
 logger = logging.getLogger(__name__)
 
 bot = None
 
 
-async def initialize_bot(with_webhooks):
+async def initialize_bot():
     global bot
     if not bot:
+        logger.info('Initializing bot')
         bot = Bot(token=settings.TELEGRAM_TOKEN)
-        if with_webhooks:
-            logger.info('Initializing bot with webhooks')
-            webhooks_url = settings.TELEGRAM_WEBHOOKS_SERVER + reverse(views.webhooks_view)
-            await bot.set_webhook(webhooks_url, secret_token=settings.TELEGRAM_SECRET_TOKEN)
-        else:
-            logger.info('Initializing bot without webhooks')
-            await bot.delete_webhook()
         await bot.initialize()
         logger.info(f'Bot: {bot.username}')
         await set_commands()
