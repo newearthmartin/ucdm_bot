@@ -106,10 +106,6 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return ConversationHandler.END
 
 
-async def chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(update)
-
-
 def main():
     application = Application.builder().token(settings.TELEGRAM_TOKEN).build()
     bot_module.bot = application.bot
