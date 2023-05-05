@@ -6,7 +6,6 @@ from django.conf import settings
 workbook_structure = None
 workbook_cache = {}
 WORKBOOK_PATH = os.path.join(settings.BASE_DIR, 'acim_workbook')
-WORKBOOK_LANG = 'es'
 
 
 def get_day_texts(day: int) -> list[str]:
@@ -23,7 +22,7 @@ def get_day_texts(day: int) -> list[str]:
 
     rv = []
     for file in workbook_structure[day]:
-        with open(f'{WORKBOOK_PATH}/{WORKBOOK_LANG}/{file}') as f:
+        with open(f'{WORKBOOK_PATH}/{settings.WORKBOOK_LANGUAGE}/{file}') as f:
             text = f.read()
             rv.append(text)
     workbook_cache[day] = rv
