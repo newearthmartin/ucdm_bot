@@ -5,6 +5,7 @@ class Chat(models.Model):
     chat_id = models.IntegerField(unique=True)
     is_group = models.BooleanField(default=False)
     is_calendar = models.BooleanField(default=True)
+    language = models.CharField(max_length=8, default='es')
     send_lesson = models.BooleanField(default=False)
     last_sent = models.DateField(null=True, blank=True)
     last_lesson_sent = models.IntegerField(blank=True, null=True)

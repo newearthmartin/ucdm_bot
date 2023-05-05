@@ -34,6 +34,7 @@ async def set_commands():
     commands = [
         BotCommand('start', 'Comenzar a recibir las lecciones'),
         BotCommand('modo', 'Configurar el modo de las lecciones (calendario o propia)'),
+        BotCommand('idioma', 'Configurar el idioma de las lecciones'),
         BotCommand('stop', 'Dejar de recibir las lecciones'),
     ]
     await bot.set_my_commands(commands)
@@ -50,6 +51,13 @@ async def set_chat_status(chat_id, send_lesson, is_group=False, send_msg=True):
         await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
+def send_today_shortly(chat):
+    async def task():
+        await asyncio.sleep(3)
+        await do_send_today(chat)
+    asyncio.create_task(task())
+
+
 async def set_lesson_mode(chat_id, is_calendar, lesson_number=None):
     assert is_calendar or lesson_number is not None
     chat = await Chat.objects.filter(chat_id=chat_id).afirst()
@@ -62,11 +70,17 @@ async def set_lesson_mode(chat_id, is_calendar, lesson_number=None):
         chat.last_lesson_sent = lesson_number - 1
     chat.last_sent = None
     await chat.asave()
+    send_today_shortly(chat)
 
-    async def task():
-        await asyncio.sleep(3)
-        await do_send_today(chat)
-    asyncio.create_task(task())
+
+async def set_language(chat_id, language):
+    assert language is not None
+    chat = await Chat.objects.filter(chat_id=chat_id).afirst()
+    if chat.language != language:
+        chat.language = language
+        chat.last_sent = None
+        await chat.asave()
+        send_today_shortly(chat)
 
 
 async def __modify_chat_status(chat_id, is_group, send_lesson):
@@ -117,7 +131,7 @@ async def do_send_today(chat):
         lesson_number += 1
         if lesson_number < 0 or lesson_number > 364:
             lesson_number = 0
-    await send_lesson(chat, lesson_number)
+    await send_lesson(chat, lesson_number, language=chat.language)
 
 
 def can_send_today(today, chat):
@@ -126,9 +140,9 @@ def can_send_today(today, chat):
     return (today - chat.last_sent).days >= 1
 
 
-async def send_lesson(chat, lesson_number):
+async def send_lesson(chat, lesson_number, language=None):
     logger.info(f'Sending lesson {lesson_number + 1} to {chat}')
-    for text in get_day_texts(lesson_number):
+    for text in get_day_texts(lesson_number, language=language):
         await __send_lesson_text(chat.chat_id, text)
     chat.last_sent = datetime.now().date()
     chat.last_lesson_sent = lesson_number

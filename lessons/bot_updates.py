@@ -10,8 +10,9 @@ from . import bot as bot_module
 logger = logging.getLogger(__name__)
 
 
-class State(Enum): LESSON_TYPES, LESSON_NUMBER = range(2)
+class State(Enum): LESSON_TYPES, LESSON_NUMBER, LESSON_LANGUAGE = range(3)
 class LessonType(Enum): CALENDAR = 'Calendario'; OWN = 'Propia'
+class LessonLanguage(Enum): ES = 'Castellano'; EN = 'English'
 
 
 def configure_handlers(application: Application):
@@ -20,15 +21,22 @@ def configure_handlers(application: Application):
         entry_points=[CommandHandler('modo', lesson_mode_state)],
         states={
             State.LESSON_TYPES: [
-                MessageHandler(filters.Regex(f'^({LessonType.CALENDAR.value}|{LessonType.OWN.value})$'),
-                               lesson_types_state)],
+                MessageHandler(filters.Regex(f'^({LessonType.CALENDAR.value}|{LessonType.OWN.value})$'), lesson_types_state)],
             State.LESSON_NUMBER: [MessageHandler(filters.TEXT, lesson_number_state)],
+        }, fallbacks=[CommandHandler('cancel', cancel_state)]
+    )
+    language_handler = ConversationHandler(
+        entry_points=[CommandHandler('idioma', language_state)],
+        states={
+            State.LESSON_LANGUAGE: [
+                MessageHandler(filters.Regex(f'^({LessonLanguage.ES.value}|{LessonLanguage.EN.value})$'), language_set_state)],
         }, fallbacks=[CommandHandler('cancel', cancel_state)]
     )
     stop_handler = ConversationHandler(entry_points=[CommandHandler('stop', stop_state)], states={}, fallbacks=[])
     member_handler = ChatMemberHandler(process_chat_member)
     application.add_handler(start_handler)
     application.add_handler(mode_handler)
+    application.add_handler(language_handler)
     application.add_handler(stop_handler)
     application.add_handler(member_handler)
 
@@ -45,6 +53,27 @@ async def stop_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(
         'Ya no recibirás más las lecciones.\n\n'
         'Envía /start para volver a recibirlas.\n', parse_mode=ParseMode.MARKDOWN, reply_markup=ReplyKeyboardRemove())
+    return ConversationHandler.END
+
+
+async def language_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    reply_keyboard = [[LessonLanguage.ES.value, LessonLanguage.EN.value]]
+    reply_markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True,
+                                       input_field_placeholder='¿Lenguaje?')
+    await update.message.reply_text(
+        '¿En qué lenguaje quieres las lecciones?\n\n'
+        'Envía /cancel para abandonar esta opción.\n',
+        parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+    return State.LESSON_LANGUAGE
+
+
+async def language_set_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    language = LessonLanguage(update.message.text)
+    logger.info(f'Language chosen: {language}')
+    await update.message.reply_text(
+        f'Recibirás la lección del día en: {language.value}',
+        reply_markup=ReplyKeyboardRemove())
+    await bot_module.set_language(get_chat_id(update), language.name.lower())
     return ConversationHandler.END
 
 
