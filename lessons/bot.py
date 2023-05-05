@@ -58,9 +58,13 @@ def send_today_shortly(chat):
     asyncio.create_task(task())
 
 
+async def get_chat(chat_id):
+    return await Chat.objects.filter(chat_id=chat_id).afirst()
+
+
 async def set_lesson_mode(chat_id, is_calendar, lesson_number=None):
     assert is_calendar or lesson_number is not None
-    chat = await Chat.objects.filter(chat_id=chat_id).afirst()
+    chat = await get_chat(chat_id)
     if is_calendar:
         if chat.is_calendar: return
         chat.is_calendar = True
@@ -75,7 +79,7 @@ async def set_lesson_mode(chat_id, is_calendar, lesson_number=None):
 
 async def set_language(chat_id, language):
     assert language is not None
-    chat = await Chat.objects.filter(chat_id=chat_id).afirst()
+    chat = await get_chat(chat_id)
     if chat.language != language:
         chat.language = language
         chat.last_sent = None
@@ -84,7 +88,7 @@ async def set_language(chat_id, language):
 
 
 async def __modify_chat_status(chat_id, is_group, send_lesson):
-    chat = await Chat.objects.filter(chat_id=chat_id).afirst()
+    chat = await get_chat(chat_id)
     modified = False
     if not chat:
         if not send_lesson: return False

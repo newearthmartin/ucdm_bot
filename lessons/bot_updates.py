@@ -60,8 +60,11 @@ async def language_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     reply_keyboard = [[LessonLanguage.ES.value, LessonLanguage.EN.value]]
     reply_markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True,
                                        input_field_placeholder='¿Lenguaje?')
+    chat = await bot_module.get_chat(get_chat_id(update))
+    language = LessonLanguage[chat.language.upper()]
     await update.message.reply_text(
         '¿En qué lenguaje quieres las lecciones?\n\n'
+        f'Actualmente estás recibiendo las lecciones en: {language.value}\n\n'
         'Envía /cancel para abandonar esta opción.\n',
         parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
     return State.LESSON_LANGUAGE
