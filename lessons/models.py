@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.admin import ModelAdmin
 
 
 class Chat(models.Model):
@@ -13,3 +14,6 @@ class Chat(models.Model):
     def __str__(self):
         type_str = 'chat' if not self.is_group else 'group'
         return f'{type_str}_{self.chat_id}'
+
+    class Admin(ModelAdmin):
+        list_display = ['pk', 'chat_id', 'is_group', 'send_lesson']

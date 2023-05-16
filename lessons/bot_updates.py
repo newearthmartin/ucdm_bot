@@ -42,6 +42,8 @@ def configure_handlers(application: Application):
 
 
 async def start_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    chat = await bot_module.get_chat(get_chat_id(update))
+    logger.info(f'{chat} - start')
     await update.message.reply_text(
         '¡Hola! A partir de hoy te enviaré las lecciones de *Un Curso de Milagros* todos los días.\n\n'
         'Envía /modo para seleccionar el modo de lecciones (calendario o propia)\n'

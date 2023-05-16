@@ -59,7 +59,11 @@ def send_today_shortly(chat):
 
 
 async def get_chat(chat_id):
-    return await Chat.objects.filter(chat_id=chat_id).afirst()
+    chat = await Chat.objects.filter(chat_id=chat_id).afirst()
+    if not chat:
+        chat = Chat(chat_id=chat_id)
+        await chat.asave()
+    return chat
 
 
 async def set_lesson_mode(chat_id, is_calendar, lesson_number=None):

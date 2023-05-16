@@ -1,3 +1,4 @@
-from django.contrib import admin
+from marto_python.admin import register_admin
+from .models import Chat
 
-# Register your models here.
+register_admin(Chat)
