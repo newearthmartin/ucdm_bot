@@ -43,7 +43,7 @@ def configure_handlers(application: Application):
 
 async def start_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     chat = await bot_module.get_chat(get_chat_id(update))
-    logger.info(f'{chat} - start')
+    logger.info(f'{chat} - {update.message.from_user.username} - start_state')
     await update.message.reply_text(
         '¡Hola! A partir de hoy te enviaré las lecciones de *Un Curso de Milagros* todos los días.\n\n'
         'Envía /modo para seleccionar el modo de lecciones (calendario o propia)\n'
@@ -52,6 +52,8 @@ async def start_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 
 async def stop_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    chat = await bot_module.get_chat(get_chat_id(update))
+    logger.info(f'{chat} - stop_state')
     await update.message.reply_text(
         'Ya no recibirás más las lecciones.\n\n'
         'Envía /start para volver a recibirlas.\n', parse_mode=ParseMode.MARKDOWN, reply_markup=ReplyKeyboardRemove())
@@ -63,6 +65,7 @@ async def language_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     reply_markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True,
                                        input_field_placeholder='¿Lenguaje?')
     chat = await bot_module.get_chat(get_chat_id(update))
+    logger.info(f'{chat} - {update.message.from_user.username} - language_state')
     language = LessonLanguage[chat.language.upper()]
     await update.message.reply_text(
         '¿En qué lenguaje quieres las lecciones?\n\n'
@@ -73,8 +76,9 @@ async def language_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 
 async def language_set_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    chat = await bot_module.get_chat(get_chat_id(update))
     language = LessonLanguage(update.message.text)
-    logger.info(f'Language chosen: {language}')
+    logger.info(f'{chat} - {update.message.from_user.username} - language_set_state - {language}')
     await update.message.reply_text(
         f'Recibirás la lección del día en: {language.value}',
         reply_markup=ReplyKeyboardRemove())
@@ -83,6 +87,9 @@ async def language_set_state(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def lesson_mode_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    chat = await bot_module.get_chat(get_chat_id(update))
+    logger.info(f'{chat} - {update.message.from_user.username} - lesson_mode_state')
+
     reply_keyboard = [[LessonType.CALENDAR.value, LessonType.OWN.value]]
     reply_markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True,
                                        input_field_placeholder='¿Tipo de lección?')
@@ -94,8 +101,9 @@ async def lesson_mode_state(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def lesson_types_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    chat = await bot_module.get_chat(get_chat_id(update))
     lesson_type = LessonType(update.message.text)
-    logger.info(f'Lesson type chosen: {lesson_type}')
+    logger.info(f'{chat} - {update.message.from_user.username} - lesson_types_state - {lesson_type}')
     if lesson_type == LessonType.CALENDAR:
         await update.message.reply_text(
             'Recibirás la lección del día según el calendario.',
@@ -114,11 +122,13 @@ async def lesson_number_state(update: Update, context: ContextTypes.DEFAULT_TYPE
         number = int(update.message.text)
     except ValueError:
         number = None
+    chat = await bot_module.get_chat(get_chat_id(update))
+    logger.info(f'{chat} - {update.message.from_user.username} - lesson_number_state - {number}')
+
     if number is None or number < 1 or number > 365:
         await update.message.reply_text(
             'No es un número válido. Por favor ingresa un número entre 1 y 365:', reply_markup=ReplyKeyboardRemove())
         return State.LESSON_NUMBER
-    logger.info(f'Lesson number selected {number}')
     await update.message.reply_text(
         f'Recibirás las lecciones empezando hoy por la número {number}.', reply_markup=ReplyKeyboardRemove())
     await bot_module.set_lesson_mode(get_chat_id(update), False, lesson_number=number - 1)
@@ -126,8 +136,8 @@ async def lesson_number_state(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def cancel_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    user = update.message.from_user
-    logger.info(f'User {user.first_name} canceled the conversation.')
+    chat = await bot_module.get_chat(get_chat_id(update))
+    logger.info(f'{chat} - {update.message.from_user.username} - cancel_state')
     await update.message.reply_text('Opción cancelada.', reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
@@ -142,11 +152,13 @@ def get_chat_id(update: Update) -> int:
 
 
 async def process_chat_member(update, context: ContextTypes.DEFAULT_TYPE):
-    logger.info('Processing chat member update')
     my_chat_member = update.my_chat_member
     new_chat_member = my_chat_member and update.my_chat_member.new_chat_member
     chat_id = get_chat_id(update)
+
     if new_chat_member and new_chat_member.user.id == bot_module.bot.id:
+        chat = bot_module.get_chat(chat_id)
+        logger.info(f'{chat} - process_chat_member - {new_chat_member.status}')
         if new_chat_member.status == ChatMemberStatus.MEMBER:
             await bot_module.set_chat_status(chat_id, True, is_group=True, send_msg=True)
         elif new_chat_member.status == ChatMemberStatus.LEFT:
