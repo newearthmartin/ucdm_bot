@@ -7,7 +7,7 @@ ADMINS = [('Martin Massera', 'martinmassera@gmail.com')]
 
 read_secrets(base_dir=BASE_DIR)
 
-DEBUG = True
+DEBUG = get_secret('PRODUCTION') is None
 SECRET_KEY = 'django-insecure-0vt$7j1xhe7vob4i4_j&wmufbitctj&fdalr5l6y+*bslo00!^'
 
 WORKBOOK_LANGUAGE = get_secret('WORKBOOK_LANGUAGE', 'es')
@@ -95,6 +95,9 @@ AUTH_PASSWORD_VALIDATORS = [
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {'()': 'django.utils.log.RequireDebugFalse'},
+    },
     'formatters': {
         'simple': {
             'format': '{asctime} {levelname} {message}',
@@ -115,6 +118,7 @@ LOGGING = {
         'mail_admins': {
             'level': 'ERROR',
             'class': 'django.utils.log.AdminEmailHandler',
+            'filters': ['require_debug_false'],
         },
     },
     'root': {
