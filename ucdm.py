@@ -19,7 +19,10 @@ async def send_all_loop():
     DELAY = 5 * 60
     logger.info(f'Starting send_all loop with delay {DELAY / 60} minutes')
     while True:
-        await try_send_all()
+        try:
+            await try_send_all()
+        except Exception as e:
+            logger.exception(e)
         await asyncio.sleep(DELAY)
 
 
