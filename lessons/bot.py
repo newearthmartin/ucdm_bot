@@ -120,13 +120,8 @@ async def try_send_today(chat):
     now = datetime.now()
     today = now.date()
     if not can_send_today(today, chat):
-        logger.info(f'Already sent today\'s lesson to {chat}')
         return
-    if now.hour < 8:
-        logger.info(f'Too early to send to {chat}')
-        return
-    if now.hour >= 23:
-        logger.info(f'Too late to send to {chat}')
+    if now.hour < 8 or now.hour >= 23:
         return
     await do_send_today(chat)
 
