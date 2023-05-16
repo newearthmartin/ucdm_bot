@@ -1,6 +1,4 @@
 wheel
 django==4.2
-django-extensions==3.2.1
 python-telegram-bot==20.2
 toml==0.10.2
-Werkzeug==2.3.4

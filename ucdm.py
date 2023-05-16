@@ -1,4 +1,4 @@
-#!/usr/bin/env -S PYENV_VERSION=ucdm DJANGO_SETTINGS_MODULE=ucdm_bot.settings python
+#!/usr/bin/env -S PYENV_VERSION=ucdm DJANGO_SETTINGS_MODULE=ucdm_bot.settings PRODUCTION=true python
 import asyncio
 import django
 django.setup()

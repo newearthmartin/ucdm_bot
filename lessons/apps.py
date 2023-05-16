@@ -13,10 +13,7 @@ class LessonsConfig(AppConfig):
         if not os.environ.get('RUN_MAIN'):  # To prevent double running
             return
 
-        import asyncio
-        from threading import Thread
-        from .bot_loop import run_bot_loop
-
-        Thread(target=lambda: asyncio.run(run_bot_loop())).start()
-
-
+        # import asyncio
+        # from threading import Thread
+        # from .bot_loop import run_bot_loop
+        # Thread(target=lambda: asyncio.run(run_bot_loop())).start()
