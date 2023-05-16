@@ -6,3 +6,4 @@ __pycache__/
 secrets.toml
 ucdm.log
 db.sqlite3
+test.py
