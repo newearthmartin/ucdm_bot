@@ -7,7 +7,7 @@ ADMINS = [('Martin Massera', 'martinmassera@gmail.com')]
 
 read_secrets(base_dir=BASE_DIR)
 
-DEBUG = get_secret('PRODUCTION') is None
+DEBUG = not get_secret('PRODUCTION', default=False)
 SECRET_KEY = 'django-insecure-0vt$7j1xhe7vob4i4_j&wmufbitctj&fdalr5l6y+*bslo00!^'
 
 WORKBOOK_LANGUAGE = get_secret('WORKBOOK_LANGUAGE', 'es')
