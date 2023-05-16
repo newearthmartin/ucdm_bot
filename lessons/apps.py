@@ -1,3 +1,4 @@
+import os
 import logging
 from django.apps import AppConfig
 
@@ -9,6 +10,13 @@ class LessonsConfig(AppConfig):
     name = 'lessons'
 
     def ready(self):
-        # if not os.environ.get('RUN_MAIN'):  # To prevent double running
-        #     return
-        pass
+        if not os.environ.get('RUN_MAIN'):  # To prevent double running
+            return
+
+        import asyncio
+        from threading import Thread
+        from .bot_loop import run_bot_loop
+
+        Thread(target=lambda: asyncio.run(run_bot_loop())).start()
+
+

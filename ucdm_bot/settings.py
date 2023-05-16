@@ -7,6 +7,7 @@ ADMINS = [('Martin Massera', 'martinmassera@gmail.com')]
 
 read_secrets(base_dir=BASE_DIR)
 
+SITE_ID = 1
 DEBUG = not get_secret('PRODUCTION', default=False)
 SECRET_KEY = 'django-insecure-0vt$7j1xhe7vob4i4_j&wmufbitctj&fdalr5l6y+*bslo00!^'
 
@@ -35,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django_extensions',
     'lessons',
 ]
 
