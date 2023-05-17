@@ -38,5 +38,5 @@ def get_day_lesson_number(today: date) -> int:
     jan1 = date(today.year, 1, 1)
     lesson_number = (today - jan1).days
     if lesson_number >= 365:  # for years with 366 days
-        return None
+        return 364
     return lesson_number
