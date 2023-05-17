@@ -1,6 +1,7 @@
 import logging
 import asyncio
-from lessons.bot import initialize_bot, try_send_all
+from lessons.bot_updates import initialize_bot
+from lessons.bot import try_send_all
 
 logger = logging.getLogger(__name__)
 

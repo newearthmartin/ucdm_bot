@@ -1,32 +1,15 @@
 import asyncio
 import logging
-from django.conf import settings
 from telegram import BotCommand
 from telegram.constants import ParseMode
-from telegram.ext import Application
 from datetime import datetime
 from .workbook import get_day_texts, get_day_lesson_number
 from .models import Chat
-from . import bot_updates
 
 logger = logging.getLogger(__name__)
 
 bot = None
 application = None
-
-
-async def initialize_bot():
-    global bot
-    global application
-    if not bot:
-        logger.info('Initializing bot')
-        application = Application.builder().token(settings.TELEGRAM_TOKEN).build()
-        bot_updates.configure_handlers(application)
-        await application.initialize()
-        bot = application.bot
-        logger.info(f'Bot: {bot.username}')
-        await set_commands()
-    return application
 
 
 async def set_commands():
@@ -59,11 +42,15 @@ def send_today_shortly(chat):
     asyncio.create_task(task())
 
 
-async def get_chat(chat_id):
+async def get_chat(chat_id, is_group=None):
     chat = await Chat.objects.filter(chat_id=chat_id).afirst()
     if not chat:
         chat = Chat(chat_id=chat_id)
         await chat.asave()
+    if is_group is not None and chat.is_group != is_group:
+        logger.info(f'{chat} - setting as {"group" if is_group else "chat"}')
+        chat.is_group = is_group
+        chat.save()
     return chat
 
 
@@ -71,7 +58,6 @@ async def set_lesson_mode(chat_id, is_calendar, lesson_number=None):
     assert is_calendar or lesson_number is not None
     chat = await get_chat(chat_id)
     if is_calendar:
-        if chat.is_calendar: return
         chat.is_calendar = True
         chat.last_lesson_sent = None
     else:
