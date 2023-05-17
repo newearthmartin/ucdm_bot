@@ -46,8 +46,7 @@ async def set_send_lesson(chat, do_send, send_msg=True):
     await chat.asave()
     if send_msg:
         if chat.send_lesson:
-            msg = 'Hola!\n\nA partir de ahora voy a estar mandando las lecciones todos los días.\n\n' \
-                  'Para frenar las lecciones manda el mensaje */stop*'
+            msg = '¡Hola! Soy el bot de lecciones de *Un Curso de Milagros*.\n\nEnvía /start para empezar'
         else:
             msg = 'Ya no enviaré las lecciones.\n\nPara volver a recibirlas, manda el mensaje */start*'
         await bot.send_message(chat.chat_id, msg, parse_mode=ParseMode.MARKDOWN)
