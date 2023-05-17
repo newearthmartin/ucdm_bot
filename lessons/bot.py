@@ -40,15 +40,17 @@ async def set_commands():
     await bot.set_my_commands(commands)
 
 
-async def set_chat_status(chat_id, send_lesson, is_group=False, send_msg=True):
-    modified = await __modify_chat_status(chat_id, is_group, send_lesson)
-    if modified and send_msg:
-        if send_lesson:
+async def set_send_lesson(chat, do_send, send_msg=True):
+    if chat.send_lesson == do_send: return
+    chat.send_lesson = do_send
+    await chat.asave()
+    if send_msg:
+        if chat.send_lesson:
             msg = 'Hola!\n\nA partir de ahora voy a estar mandando las lecciones todos los días.\n\n' \
                   'Para frenar las lecciones manda el mensaje */stop*'
         else:
             msg = 'Ya no enviaré las lecciones.\n\nPara volver a recibirlas, manda el mensaje */start*'
-        await bot.send_message(chat_id, msg, parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(chat.chat_id, msg, parse_mode=ParseMode.MARKDOWN)
 
 
 def send_today_shortly(chat):
@@ -89,23 +91,6 @@ async def set_language(chat_id, language):
         chat.last_sent = None
         await chat.asave()
         send_today_shortly(chat)
-
-
-async def __modify_chat_status(chat_id, is_group, send_lesson):
-    chat = await get_chat(chat_id)
-    modified = False
-    if not chat:
-        if not send_lesson: return False
-        chat = Chat(chat_id=chat_id, is_group=is_group, send_lesson=True)
-        modified = True
-    elif chat.send_lesson != send_lesson:
-        chat.send_lesson = send_lesson
-        modified = True
-    if modified:
-        action = 'send' if send_lesson else 'NOT send'
-        logger.info(f'Setting {chat} to {action} lessons')
-        await chat.asave()
-    return modified
 
 
 async def try_send_all():
