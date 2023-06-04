@@ -1,4 +1,4 @@
 wheel
 django==4.2
-python-telegram-bot==20.2
+python-telegram-bot[job-queue]==20.2
 toml==0.10.2

@@ -19,7 +19,6 @@ class LessonType(Enum):
     FIRST = 'Primera'
     CALENDAR = 'Calendario'
     OTHER = 'Otra'
-    OWN = 'Propia'
 
 
 class LessonLanguage(Enum):
@@ -39,25 +38,24 @@ async def initialize_bot():
     return bot_module.application
 
 
+def enum_regex(enum_type):
+    regex = '|'.join([e.value for e in enum_type])
+    return f'^({regex})$'
+
+
 def configure_handlers(application: Application):
     start_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start_state), CommandHandler('modo', lesson_mode_state)],
         states={
-            State.LESSON_MODE: [
-                MessageHandler(
-                    filters.Regex(f'^({LessonType.FIRST.value}|{LessonType.CALENDAR.value}|{LessonType.OTHER.value}|{LessonType.OWN.value})$'),
-                    lesson_set_mode_state
-                )],
-            State.LESSON_NUMBER: [MessageHandler(filters.TEXT, lesson_number_state)],
-    }, fallbacks=[CommandHandler('cancel', cancel_state)])
+            State.LESSON_MODE: [MessageHandler(filters.Regex(enum_regex(LessonType)), lesson_set_mode_state)],
+            State.LESSON_NUMBER: [MessageHandler(filters.TEXT, lesson_number_state)]},
+        fallbacks=[CommandHandler('cancel', cancel_state)], conversation_timeout=10 * 60, allow_reentry=True
+    )
     language_handler = ConversationHandler(
         entry_points=[CommandHandler('idioma', language_state)],
         states={
-            State.LESSON_LANGUAGE: [
-                MessageHandler(
-                    filters.Regex(f'^({LessonLanguage.ES.value}|{LessonLanguage.EN.value})$'), language_set_state
-                )],
-        }, fallbacks=[CommandHandler('cancel', cancel_state)]
+            State.LESSON_LANGUAGE: [MessageHandler(filters.Regex(enum_regex(LessonLanguage)), language_set_state)]},
+        fallbacks=[CommandHandler('cancel', cancel_state)], conversation_timeout=10 * 60, allow_reentry=True
     )
     stop_handler = ConversationHandler(entry_points=[CommandHandler('stop', stop_state)], states={}, fallbacks=[])
     member_handler = ChatMemberHandler(process_chat_member)
@@ -74,7 +72,7 @@ async def start_state(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text(
         '¡Hola! Soy el bot de *Un Curso de Milagros* y mi propósito es enviarte las lecciones todos los días.\n\n'
         '¿Deseas comenzar con la primera lección? ¿O deseas seguir la lección del día según el calendario?\n\n'
-        'Recuerda que en cualquier momento puedes envíar /stop para dejar de recibir las lecciones.\n',
+        'Envía /cancel para cancelar.\n',
         parse_mode=ParseMode.MARKDOWN,
         reply_markup=get_reply_markup(options, placeholder='¿Tipo de lección?')
     )
@@ -127,7 +125,7 @@ async def lesson_mode_state(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int
         '¿Quieres la lección del día según el calendario o ir en tu propia lección?\n\n'
         'Envía /cancel para abandonar esta opción.\n',
         parse_mode=ParseMode.MARKDOWN,
-        reply_markup=get_reply_markup([LessonType.CALENDAR.value, LessonType.OWN.value], placeholder='¿Tipo de lección?'))
+        reply_markup=get_reply_markup([LessonType.CALENDAR.value, LessonType.OTHER.value], placeholder='¿Tipo de lección?'))
     return State.LESSON_MODE
 
 
