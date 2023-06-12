@@ -26,6 +26,9 @@ EMAIL_USE_SSL = True
 EMAIL_PORT = 465
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
