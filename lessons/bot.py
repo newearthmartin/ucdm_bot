@@ -71,11 +71,14 @@ async def set_lesson_mode(chat_id, is_calendar, lesson_number=None):
 async def set_language(chat_id, language):
     assert language is not None
     chat = await get_chat(chat_id)
-    if chat.language != language:
-        chat.language = language
-        chat.last_sent = None
-        await chat.asave()
-        send_today_shortly(chat)
+    if chat.language == language:
+        return
+    chat.language = language
+    chat.last_sent = None
+    if not chat.is_calendar and chat.last_lesson_sent is not None:
+        chat.last_lesson_sent -= 1  # FIXME: This is prone to errors, is there a better way to resend the same lesson?
+    await chat.asave()
+    send_today_shortly(chat)
 
 
 async def try_send_all():
@@ -100,8 +103,7 @@ async def do_send_today(chat):
     if chat.is_calendar:
         lesson_number = get_day_lesson_number(datetime.now().date())
     else:
-        lesson_number = chat.last_lesson_sent if chat.last_lesson_sent else -1
-        lesson_number += 1
+        lesson_number = (chat.last_lesson_sent + 1) if chat.last_lesson_sent is not None else 0
         if lesson_number < 0 or lesson_number > 364:
             lesson_number = 0
     await send_lesson(chat, lesson_number, language=chat.language)
