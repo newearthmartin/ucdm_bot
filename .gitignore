@@ -8,3 +8,4 @@ secrets.toml
 ucdm.log
 db.sqlite3
 test.py
+test_*.py
