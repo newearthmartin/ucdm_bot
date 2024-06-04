@@ -219,6 +219,7 @@ async def process_chat_member(update, _: ContextTypes.DEFAULT_TYPE):
 
 
 async def retrieve_chat_name(chat):
+    logger.info(f'{chat} - retrieving chat name')
     try:
         info = await bot_module.bot.get_chat(chat.chat_id)
     except BadRequest:
