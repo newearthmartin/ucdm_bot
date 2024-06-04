@@ -67,7 +67,7 @@ def configure_handlers(application: Application):
 
 async def start_state(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
     chat = await get_or_create_chat(update)
-    logger.info(f'{chat} - {update.message.from_user.username} - start_state')
+    logger.info(f'{chat} - start_state')
     options = [LessonType.FIRST.value, LessonType.CALENDAR.value, LessonType.OTHER.value]
     await update.message.reply_text(
         '¡Hola! Soy el bot de *Un Curso de Milagros* y mi propósito es enviarte las lecciones todos los días.\n\n'
@@ -190,7 +190,18 @@ async def get_or_create_chat(update: Update):
     if message_chat and message_chat.type == ChatType.GROUP:
         is_group = True
     chat_id = get_chat_id(update)
-    return await bot_module.get_chat(chat_id, is_group=is_group)
+    chat = await bot_module.get_chat(chat_id, is_group=is_group)
+    if message_chat:
+        await update_name_from_message(chat, message_chat)
+    return chat
+
+
+async def update_name_from_message(chat, message):
+    name = message and (message.username or message.title)
+    if name and chat.username != name:
+        logger.info(f'{chat} - updating name to "{name}"')
+        chat.username = name
+        await chat.asave()
 
 
 async def process_chat_member(update, _: ContextTypes.DEFAULT_TYPE):

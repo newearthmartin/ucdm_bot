@@ -50,7 +50,7 @@ async def get_chat(chat_id, is_group=None):
     if is_group is not None and chat.is_group != is_group:
         logger.info(f'{chat} - setting as {"group" if is_group else "chat"}')
         chat.is_group = is_group
-        chat.save()
+        await chat.asave()
     return chat
 
 
