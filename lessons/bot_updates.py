@@ -225,7 +225,7 @@ async def retrieve_chat_name(chat):
     except BadRequest:
         logger.error(f'{chat} - Bad request when retrieving chat name')
         return
-    username = info.title if ChatType.GROUP else info.username
+    username = getattr(info, 'title') or getattr(info, 'username')
     if username and username != chat.username:
         print(f'{chat} - Updating username to "{username}"')
         chat.username = username
