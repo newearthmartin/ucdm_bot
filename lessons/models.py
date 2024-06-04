@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.admin import ModelAdmin
 
 
 class Chat(models.Model):
@@ -17,5 +16,3 @@ class Chat(models.Model):
         username_str = f'_{self.username}' if self.username else ''
         return f'{type_str}_{self.chat_id}{username_str}'
 
-    class Admin(ModelAdmin):
-        list_display = ['pk', 'chat_id', 'username', 'is_group', 'send_lesson']
