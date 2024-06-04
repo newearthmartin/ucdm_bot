@@ -54,13 +54,22 @@ def configure_handlers(application: Application):
     )
     language_handler = ConversationHandler(
         entry_points=[CommandHandler('idioma', language_state)],
-        states={
-            State.LESSON_LANGUAGE: [MessageHandler(filters.Regex(enum_regex(LessonLanguage)), language_set_state)]},
+        states={State.LESSON_LANGUAGE: [MessageHandler(filters.Regex(enum_regex(LessonLanguage)), language_set_state)]},
         fallbacks=[CommandHandler('cancel', cancel_state)], conversation_timeout=10 * 60, allow_reentry=True
     )
+    specific_language_handlers = [
+        ConversationHandler(
+            entry_points=[CommandHandler('en', change_language_state_fn(LessonLanguage.EN))],
+            states={}, fallbacks=[]),
+        ConversationHandler(
+            entry_points=[CommandHandler('es', change_language_state_fn(LessonLanguage.ES))],
+            states={}, fallbacks=[])
+    ]
     stop_handler = ConversationHandler(entry_points=[CommandHandler('stop', stop_state)], states={}, fallbacks=[])
     member_handler = ChatMemberHandler(process_chat_member)
     application.add_handler(start_handler)
+    for handler in specific_language_handlers:
+        application.add_handler(handler)
     application.add_handler(language_handler)
     application.add_handler(stop_handler)
     application.add_handler(member_handler)
@@ -117,6 +126,20 @@ async def language_set_state(update: Update, _: ContextTypes.DEFAULT_TYPE) -> in
         reply_markup=ReplyKeyboardRemove())
     await bot_module.set_language(get_chat_id(update), language.name.lower())
     return ConversationHandler.END
+
+
+def change_language_state_fn(language: LessonLanguage):
+    async def change_language_state(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
+        chat = await get_or_create_chat(update)
+        lang_code = language.name.lower()
+        if chat.language == lang_code:
+            msg = f'Ya estás recibiendo las lecciones en {language.value}.'
+            await update.message.reply_text(msg, reply_markup=ReplyKeyboardRemove())
+            return
+        logger.info(f'{chat} - {update.message.from_user.username} - {language.value}')
+        await bot_module.set_language(get_chat_id(update), lang_code)
+        return ConversationHandler.END
+    return change_language_state
 
 
 async def lesson_mode_state(update: Update, _: ContextTypes.DEFAULT_TYPE) -> int:
