@@ -68,7 +68,10 @@ def configure_handlers(application: Application):
     # Shortcut handlers:
 
     calendar_handler = ConversationHandler(entry_points=[CommandHandler('cal', calendar_state)], states={}, fallbacks=[])
-    lesson_number_handler = ConversationHandler(entry_points=[CommandHandler('leccion', lesson_number_shortcut_state)], states={}, fallbacks=[])
+    lesson_number_handler = ConversationHandler(entry_points=[
+        CommandHandler('leccion', lesson_number_shortcut_state),
+        CommandHandler('lesson', lesson_number_shortcut_state)
+    ], states={}, fallbacks=[])
 
     application.add_handler(calendar_handler)
     application.add_handler(lesson_number_handler)
