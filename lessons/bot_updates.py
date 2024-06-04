@@ -223,7 +223,7 @@ async def retrieve_chat_name(chat):
     try:
         info = await bot_module.bot.get_chat(chat.chat_id)
     except BadRequest:
-        logger.error(f'{chat} - Bad request when retrieving chat name', exc_info=True)
+        logger.error(f'{chat} - Bad request when retrieving chat name')
         return
     username = info.title if ChatType.GROUP else info.username
     if username and username != chat.username:
