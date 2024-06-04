@@ -60,7 +60,7 @@ def configure_handlers(application: Application):
     stop_handler = ConversationHandler(entry_points=[CommandHandler('stop', stop_state)], states={}, fallbacks=[])
     member_handler = ChatMemberHandler(process_chat_member)
 
-    calendar_handler = ConversationHandler(entry_points=[CommandHandler('calendario', calendar_state)], states={}, fallbacks=[])
+    calendar_handler = ConversationHandler(entry_points=[CommandHandler('cal', calendar_state)], states={}, fallbacks=[])
 
     application.add_handler(start_handler)
     application.add_handler(language_handler)
