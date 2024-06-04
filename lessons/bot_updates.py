@@ -5,6 +5,7 @@ from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.constants import ChatMemberStatus, ParseMode, ChatType
 from telegram.ext import Application, CommandHandler, ContextTypes, ConversationHandler, ChatMemberHandler, \
     MessageHandler, filters
+from telegram.error import BadRequest
 from . import bot as bot_module
 
 
@@ -215,3 +216,16 @@ async def process_chat_member(update, _: ContextTypes.DEFAULT_TYPE):
             await bot_module.set_send_lesson(chat, True, send_msg=True)
         elif new_chat_member.status == ChatMemberStatus.LEFT:
             await bot_module.set_send_lesson(chat, False, send_msg=False)
+
+
+async def retrieve_chat_name(chat):
+    try:
+        info = await bot_module.bot.get_chat(chat.chat_id)
+    except BadRequest:
+        logger.error(f'{chat} - Bad request when retrieving chat name', exc_info=True)
+        return
+    username = info.title if ChatType.GROUP else info.username
+    if username and username != chat.username:
+        print(f'{chat} - Updating username to "{username}"')
+        chat.username = username
+        await chat.asave()
