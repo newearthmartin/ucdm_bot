@@ -116,7 +116,7 @@ def can_send_today(today, chat):
 
 
 async def send_lesson(chat, lesson_number, language=None):
-    logger.info(f'Sending lesson {lesson_number + 1} to {chat}')
+    logger.info(f'{chat} - Sending lesson {lesson_number + 1}')
     for text in get_day_texts(lesson_number, language=language):
         await __send_lesson_text(chat.chat_id, text)
     chat.last_sent = datetime.now().date()
@@ -128,9 +128,9 @@ async def __send_lesson_text(chat_id, text):
     messages = split_for_telegram(text)
     if len(messages) > 1:
         part_lengths = [len(message) for message in messages]
-        logger.info(f'Splitting message of length {len(text)} into {len(messages)} parts of lengths {part_lengths}')
+        logger.debug(f'Splitting message of length {len(text)} into {len(messages)} parts of lengths {part_lengths}')
     else:
-        logger.info(f'Sending message of length {len(text)}')
+        logger.debug(f'Sending message of length {len(text)}')
     for message in messages:
         await bot.send_message(chat_id, message, parse_mode=ParseMode.MARKDOWN)
 
