@@ -152,7 +152,7 @@ def change_language_state_fn(language: LessonLanguage):
         if chat.language == lang_code:
             await already_set_language_message(update, language)
             return ConversationHandler.END
-        logger.info(f'{chat} - {update.message.from_user.username} - {language.value}')
+        logger.info(f'{chat} - change language shortcut - {language.value}')
         await bot_module.set_language(get_chat_id(update), lang_code)
         return ConversationHandler.END
     return change_language_state
