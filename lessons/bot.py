@@ -85,7 +85,7 @@ async def set_language(chat_id, language):
 
 
 async def try_send_all():
-    chats = Chat.objects.filter(send_lesson=True, is_blocked=False)
+    chats = Chat.objects.filter(send_lesson=True)
     chat_count = await chats.acount()
     logger.info(f'Sending to {chat_count} chats')
     async for chat in Chat.objects.filter(send_lesson=True).all():
