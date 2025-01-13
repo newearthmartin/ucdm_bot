@@ -3,6 +3,9 @@ import logging
 from telegram import BotCommand
 from telegram.constants import ParseMode
 from datetime import datetime
+
+from telegram.error import TelegramError
+
 from .workbook import get_day_texts, get_day_lesson_number
 from .models import Chat
 
@@ -82,7 +85,7 @@ async def set_language(chat_id, language):
 
 
 async def try_send_all():
-    chats = Chat.objects.filter(send_lesson=True)
+    chats = Chat.objects.filter(send_lesson=True, is_blocked=False)
     chat_count = await chats.acount()
     logger.info(f'Sending to {chat_count} chats')
     async for chat in Chat.objects.filter(send_lesson=True).all():
@@ -118,7 +121,14 @@ def can_send_today(today, chat):
 async def send_lesson(chat, lesson_number, language=None):
     logger.info(f'{chat} - Sending lesson {lesson_number + 1}')
     for text in get_day_texts(lesson_number, language=language):
-        await __send_lesson_text(chat.chat_id, text)
+        try:
+            await __send_lesson_text(chat.chat_id, text)
+        except TelegramError as e:
+            if 'blocked by the user' in e.description:
+                logger.warn(f'{chat} - Blocked by the user')
+                chat.send_lesson = False
+                await chat.asave()
+                return
     chat.last_sent = datetime.now().date()
     chat.last_lesson_sent = lesson_number
     await chat.asave()
@@ -133,6 +143,7 @@ async def __send_lesson_text(chat_id, text):
         logger.debug(f'Sending message of length {len(text)}')
     for message in messages:
         await bot.send_message(chat_id, message, parse_mode=ParseMode.MARKDOWN)
+
 
 
 def split_for_telegram(text):
