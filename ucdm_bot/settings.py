@@ -9,7 +9,7 @@ read_secrets(base_dir=BASE_DIR)
 
 SITE_ID = 1
 DEBUG = not get_secret('PRODUCTION', default=False)
-SECRET_KEY = 'django-insecure-0vt$7j1xhe7vob4i4_j&wmufbitctj&fdalr5l6y+*bslo00!^'
+SECRET_KEY = get_secret('DJANGO_SECRET_KEY')
 
 WORKBOOK_LANGUAGE = get_secret('WORKBOOK_LANGUAGE', 'es')
 
