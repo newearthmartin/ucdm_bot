@@ -4,7 +4,6 @@ default:
   port: 2200
 
 settings:
-  prod_server: martin@phoenix.elmartus.mooo.com
   app_dir: ~/ucdm_bot
   restart_script: sudo systemctl restart ucdm
   superuser_user: elmartus
