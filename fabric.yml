@@ -1,17 +1,14 @@
 default:
   user: martin
   host: phoenix.elmartus.mooo.com
+  port: 2200
 
 settings:
   prod_server: martin@phoenix.elmartus.mooo.com
   app_dir: ~/ucdm_bot
-  app_django_dir: .
   restart_script: sudo systemctl restart ucdm
   superuser_user: elmartus
   superuser_mail: martinmassera@gmail.com
-
-#  venv_script: . ML.sh
-#  restart_celery_script: . ML.sh && ~/multilanguage/scripts/celery_restart.sh
 #  dump_data_models: sites newsletter ipn weebly multilanguage
 #  dump_initial: sites.site newsletter.newsletter multilanguage.country multilanguage.language
 #  dump_initial_local: weebly.weeblyauth weebly.weeblyuser weebly.weeblysite multilanguage.multisubscription multilanguage.account
