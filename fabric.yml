@@ -5,6 +5,7 @@ default:
 
 settings:
   app_dir: ~/ucdm_bot
+  venv_script: . ucdm.sh
   restart_script: sudo systemctl restart ucdm
   superuser_user: elmartus
   superuser_mail: martinmassera@gmail.com
