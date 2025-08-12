@@ -1,6 +1,0 @@
-wheel
-django==5.2.2
-django-extensions==4.1
-python-telegram-bot[job-queue]==22.1
-toml==0.10.2
-fabric==3.2.2
