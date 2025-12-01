@@ -104,10 +104,8 @@ LOGGING = {
         'require_debug_false': {'()': 'django.utils.log.RequireDebugFalse'},
     },
     'formatters': {
-        'simple': {
-            'format': '{asctime} {levelname} {message}',
-            'style': '{',
-        },
+        'simple': {'format': '%(levelname).4s %(name)s - %(message)s'},
+        'simple_time': {'format': '%(asctime)s %(levelname).4s %(name)s - %(message)s'},
     },
     'handlers': {
         'console': {
@@ -118,7 +116,7 @@ LOGGING = {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'ucdm.log'),
-            'formatter': 'simple',
+            'formatter': 'simple_time',
         },
         'mail_admins': {
             'level': 'ERROR',
@@ -126,10 +124,17 @@ LOGGING = {
             'filters': ['require_debug_false'],
         },
     },
-    'root': {
-        'handlers': ['console', 'file', 'mail_admins'],
-        'level': 'INFO',
-    },
+    'loggers': {
+        'httpx': {
+            'handlers': ['console', 'mail_admins', 'file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'root': {
+            'handlers': ['console', 'file', 'mail_admins'],
+            'level': 'INFO',
+        },
+    }
 }
 
 LANGUAGE_CODE = 'en-us'
