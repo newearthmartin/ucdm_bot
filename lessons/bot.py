@@ -41,7 +41,7 @@ async def set_send_lesson(chat, do_send, send_msg=True):
 def send_today_shortly(chat):
     async def task():
         await asyncio.sleep(3)
-        await do_send_today(chat)
+        await do_send_now(chat)
     asyncio.create_task(task())
 
 
@@ -85,20 +85,13 @@ async def set_language(chat_id, language):
 
 
 async def try_send_all():
-    chats = Chat.objects.filter(send_lesson=True)
-    chat_count = await chats.acount()
-    logger.info(f'Sending to {chat_count} chats')
-    async for chat in Chat.objects.filter(send_lesson=True).all():
-        await try_send_today(chat)
+    chats = [chat async for chat in Chat.objects.filter(send_lesson=True).all() if can_send_now(chat)]
+    logger.info(f'Send all - {len(chats)} chats')
+    for chat in chats:
+        if can_send_now(chat): await do_send_now(chat)
 
 
-async def try_send_today(chat):
-    if not can_send_now(chat):
-        return
-    await do_send_today(chat)
-
-
-async def do_send_today(chat):
+async def do_send_now(chat):
     if chat.is_calendar:
         lesson_number = get_day_lesson_number(datetime.now().date())
     else:
