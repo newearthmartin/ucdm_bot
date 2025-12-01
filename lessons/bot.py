@@ -93,11 +93,7 @@ async def try_send_all():
 
 
 async def try_send_today(chat):
-    now = datetime.now()
-    today = now.date()
-    if not can_send_today(today, chat):
-        return
-    if now.hour < 8 or now.hour >= 23:
+    if not can_send_now(chat):
         return
     await do_send_today(chat)
 
@@ -110,6 +106,14 @@ async def do_send_today(chat):
         if lesson_number < 0 or lesson_number > 364:
             lesson_number = 0
     await send_lesson(chat, lesson_number, language=chat.language)
+
+
+def can_send_now(chat):
+    now = datetime.now()
+    today = now.date()
+    if not can_send_today(today, chat):
+        return False
+    return 8 <= now.hour < 23
 
 
 def can_send_today(today, chat):
