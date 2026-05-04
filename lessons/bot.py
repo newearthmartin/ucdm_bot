@@ -122,7 +122,7 @@ async def send_lesson(chat, lesson_number, language=None):
             await __send_lesson_text(chat.chat_id, text)
         except TelegramError as e:
             if 'blocked by the user' in str(e):
-                logger.warn(f'{chat} - Blocked by the user')
+                logger.warning(f'{chat} - Blocked by the user')
                 chat.send_lesson = False
                 await chat.asave()
                 return
